@@ -7,7 +7,6 @@ COMP:= undead_siege_2_comp.flac
 NORM:= undead_siege_3_norm.flac
 OGG := undead_siege.ogg
 MEAS_JSON := loudness_norm.json
-MEAS_TP = $(shell sed -n 's/.*"input_tp"[[:space:]]*:[[:space:]]*"-\([^"]*\)".*/\1/p' $(MEAS_JSON))
 
 default:
 	@echo "make export 	- Exports score PDF and audio flac using MuseScore"
@@ -25,7 +24,8 @@ convert:
 	@echo "Generating a loudnorm measurement file.."
 	ffmpeg -y -i $(COMP) -af "loudnorm=tp=0.0:print_format=json" -f null - 2> "$(MEAS_JSON)"
 	@echo "Pass 2: applying volume adjustment based on input_tp.."
-	ffmpeg -y -i $(COMP) -af "volume=volume=$(MEAS_TP)dB" $(NORM)
+	TPV=$$(sed -n 's/.*"input_tp"[[:space:]]*:[[:space:]]*"-\([^"]*\)".*/\1/p' $(MEAS_JSON)); \
+	ffmpeg -y -i $(COMP) -af "volume=volume=$$TPV""dB" $(NORM)
 	@echo "Exporting ogg file.."
 	ffmpeg -y -i $(NORM) -i $(META) -map_metadata 1 \
 	-ar 44100 -codec:a libvorbis -qscale:a 10 $(OGG)
